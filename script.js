@@ -16,7 +16,6 @@ var HighlightedPlane = null;
 var FollowSelected = false;
 var infoBoxOriginalPosition = {};
 var customAltitudeColors = true;
-var pako = window.pako;
 var loadtime = "loadtime";
 var chunksize = 20;
 
