@@ -17,6 +17,7 @@ var FollowSelected = false;
 var infoBoxOriginalPosition = {};
 var customAltitudeColors = true;
 var loadtime = "loadtime";
+var HistoryChunks = false;
 var chunksize = 20;
 
 var SpecialSquawks = {
@@ -199,6 +200,16 @@ function initialize() {
         PlaneRowTemplate = document.getElementById("plane_row_template");
 
         refreshClock();
+
+        $.ajax({
+                url:'data/chunk_0.gz',
+                type:'HEAD',
+                timeout: 3000,
+                success: function()
+                {
+                    HistoryChunks = true;
+                }
+        });
 
         $("#loader").removeClass("hidden");
 
@@ -387,19 +398,54 @@ var PositionHistoryBuffer = [];
 var HistoryItemsReturned = 0;
 function start_load_history() {
 	if (PositionHistorySize > 0 && window.location.hash != '#nohistory') {
-		console.log("Starting to load history (" + PositionHistorySize + " items)");
-		//Load history items in parallel
-		PositionHistorySize = Math.ceil(PositionHistorySize/chunksize);
-		//PositionHistorySize = 1;
-		$("#loader_progress").attr('max',PositionHistorySize);
-		console.time("Downloaded and parsed History");
-		for (var i = 0; i < PositionHistorySize; i++) {
-			load_history_item(i);
+		if (HistoryChunks) {
+			PositionHistorySize = Math.ceil(PositionHistorySize/chunksize);
+			$("#loader_progress").attr('max',PositionHistorySize);
+			console.log("Starting to load history (" + PositionHistorySize + " items)");
+			console.time("Downloaded and parsed History");
+			//Load history chunks in parallel
+			for (var i = 0; i < PositionHistorySize; i++) {
+				load_history_chunk(i);
+			}
+		} else {
+			$("#loader_progress").attr('max',PositionHistorySize);
+			console.log("Starting to load history (" + PositionHistorySize + " items)");
+			//Load history items in parallel
+			for (var i = 0; i < PositionHistorySize; i++) {
+				load_history_item(i);
+			}
 		}
 	}
 }
 
 function load_history_item(i) {
+        console.log("Loading history #" + i);
+        $("#loader_progress").attr('value',i);
+
+        $.ajax({ url: 'data/history_' + i + '.json',
+                 timeout: PositionHistorySize * 40, // Allow 40 ms load time per history entry
+                 cache: false,
+                 dataType: 'json' })
+
+                .done(function(data) {
+					PositionHistoryBuffer.push(data);
+					HistoryItemsReturned++;
+					$("#loader_progress").attr('value',HistoryItemsReturned);
+					if (HistoryItemsReturned == PositionHistorySize) {
+						end_load_history();
+					}
+                })
+
+                .fail(function(jqxhr, status, error) {
+					//Doesn't matter if it failed, we'll just be missing a data point
+					HistoryItemsReturned++;
+					if (HistoryItemsReturned == PositionHistorySize) {
+						end_load_history();
+					}
+                });
+}
+
+function load_history_chunk(i) {
         //console.log("Loading history #" + i);
         //$("#loader_progress").attr('value',i);
 
