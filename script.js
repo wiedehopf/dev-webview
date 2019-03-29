@@ -19,6 +19,7 @@ var customAltitudeColors = true;
 var loadtime = "loadtime";
 var HistoryChunks = false;
 var chunksize = 20;
+var refresh;
 
 var SpecialSquawks = {
         '7500' : { cssClass: 'squawk7500', markerColor: 'rgb(255, 85, 85)', text: 'Aircraft Hijacking' },
@@ -84,7 +85,7 @@ function processReceiverUpdate(data) {
 
 		if (Planes[hex]) {
 			plane = Planes[hex];
-		} else if ( ac.messages < 8) {
+		} else if ( ac.messages < 4) {
 			continue;
 		} else {
 			plane = new PlaneObject(hex);
@@ -140,10 +141,10 @@ function processReceiverUpdate(data) {
 }
 
 function fetchData() {
-        if (FetchPending !== null && FetchPending.state() == 'pending') {
+        //if (FetchPending !== null && FetchPending.state() == 'pending') {
                 // don't double up on fetches, let the last one resolve
-                return;
-        }
+                //return;
+        //}
 
 	FetchPending = $.ajax({ url: 'data/aircraft.json',
                                 timeout: 5000,
@@ -151,6 +152,19 @@ function fetchData() {
                                 dataType: 'json' });
         FetchPending.done(function(data) {
                 var now = data.now;
+
+		var browserNow = (new Date()).getTime();
+		var diff = browserNow -  now*1000;
+		var delay = RefreshInterval;
+
+		if (diff > -100)
+			delay = Math.max(RefreshInterval*1.3 - diff,100);
+
+		window.setTimeout(fetchData, delay);
+
+		if ((now-LastReceiverTimestamp)*1000 >  1.5* RefreshInterval || (now-LastReceiverTimestamp)*1000 < 0.5 * RefreshInterval)
+			console.log("We missed a beat: aircraft.json");
+		//console.log(((now-LastReceiverTimestamp)*1000).toFixed(0) + " " + diff +" "+ delay + "                  "+now);
 
                 processReceiverUpdate(data);
 
@@ -187,6 +201,7 @@ function fetchData() {
         FetchPending.fail(function(jqxhr, status, error) {
                 $("#update_error_detail").text("AJAX call failed (" + status + (error ? (": " + error) : "") + "). Maybe dump1090 is no longer running?");
                 $("#update_error").css('display','block');
+		fetchData();
         });
 }
 
@@ -535,7 +550,7 @@ function end_load_history() {
         reaper();
 
         // Setup our timer to poll from the server.
-        window.setInterval(fetchData, RefreshInterval);
+        //window.setInterval(fetchData, RefreshInterval);
         window.setInterval(reaper, 60000);
 
         // And kick off one refresh immediately.
@@ -1255,6 +1270,8 @@ function refreshHighlighted() {
 
 	$('#highlighted_icao').text(highlighted.icao.toUpperCase());
 
+	$('#highlighted_rssi').text(highlighted.rssi.toFixed(1) + ' dBFS');
+
 }
 
 function refreshClock() {
@@ -1327,7 +1344,7 @@ function refreshTableInfo() {
         tableplane.tr.cells[10].textContent = format_track_brief(tableplane.track);
         tableplane.tr.cells[11].textContent = tableplane.messages;
         tableplane.tr.cells[12].textContent = tableplane.seen.toFixed(0);
-        tableplane.tr.cells[13].textContent = (tableplane.rssi !== null ? tableplane.rssi : "");
+        tableplane.tr.cells[13].textContent = (tableplane.rssi !== null ? tableplane.rssi.toFixed(1) : "");
         tableplane.tr.cells[14].textContent = (tableplane.position !== null ? tableplane.position[1].toFixed(4) : "");
         tableplane.tr.cells[15].textContent = (tableplane.position !== null ? tableplane.position[0].toFixed(4) : "");
         tableplane.tr.cells[16].textContent = format_data_source(tableplane.getDataSource());

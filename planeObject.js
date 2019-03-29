@@ -190,7 +190,7 @@ PlaneObject.prototype.updateTrack = function(receiver_timestamp, last_timestamp)
         var time_difference = (this.last_position_time - this.head_update) - (receiver_timestamp - last_timestamp);
 
         // MLAT data are given some more leeway
-        var stale_timeout = (this.position_from_mlat ? 30 : 10);
+        var stale_timeout = (this.position_from_mlat ? 15 : 5);
         var est_track = (time_difference > stale_timeout);
 
         // Also check if the position was already stale when it was exported by dump1090
@@ -435,7 +435,17 @@ PlaneObject.prototype.updateIcon = function() {
         var outline = (this.position_from_mlat ? OutlineMlatColor : OutlineADSBColor);
         var add_stroke = (this.selected && !SelectedAllPlanes) ? ' stroke="black" stroke-width="1px"' : '';
         var baseMarker = getBaseMarker(this.category, this.icaotype, this.typeDescription, this.wtc);
-        var rotation = (this.track === null ? 0 : this.track);
+        var rotation = this.track;
+        if (rotation === null) {
+                rotation = this.true_heading;
+        }
+        if (rotation === null) {
+                rotation = this.mag_heading;
+        }
+        if (rotation === null) {
+                rotation = 0;
+        }
+
         //var transparentBorderWidth = (32 / baseMarker.scale / scaleFactor).toFixed(1);
 
         var svgKey = col + '!' + outline + '!' + baseMarker.svg + '!' + add_stroke + "!" + scaleFactor;
@@ -492,7 +502,7 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
 	if (!this.rssa)
 		this.rssa = [data.rssi,data.rssi,data.rssi,data.rssi];
 	this.rssa[this.rindex++%4] = data.rssi;
-        this.rssi       = (((this.rssa[0] + this.rssa[1] + this.rssa[2] + this.rssa[3])*10)>>2)/10;
+        this.rssi       = (this.rssa[0] + this.rssa[1] + this.rssa[2] + this.rssa[3])/4;
 	this.last_message_time = receiver_timestamp - data.seen;
 
         // simple fields
@@ -544,6 +554,16 @@ PlaneObject.prototype.updateData = function(receiver_timestamp, data) {
                         }
                 }
         }
+
+        // Pick a selected altitude
+        if ('nav_altitude_fms' in data) {
+                this.nav_altitude = data.nav_altitude_fms;
+        } else if ('nav_altitude_mcp' in data) {
+                this.nav_altitude = data.nav_altitude_mcp;
+        } else {
+                this.nav_altitude = null;
+        }
+
 
         // Pick an altitude
         if ('alt_baro' in data) {
