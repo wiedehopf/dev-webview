@@ -205,6 +205,29 @@ function fetchData() {
         });
 }
 
+function get_receiver() {
+	return $.ajax({ url: 'data/receiver.json',
+		 timeout: 5000,
+		 cache: false,
+		 dataType: 'json'
+	});
+}
+function test_chunk() {
+	return $.ajax({
+		url:'data/chunk_0.gz',
+		type:'HEAD',
+		timeout: 3000,
+                success: function()
+                {
+                    HistoryChunks = true;
+                },
+                statuscode: {
+                        304: function() {
+                                HistoryChunks = true;
+                        }
+                }
+	});
+}
 var PositionHistorySize = 0;
 function initialize() {
         // Set page basics
@@ -216,15 +239,6 @@ function initialize() {
 
         refreshClock();
 
-        $.ajax({
-                url:'data/chunk_0.gz',
-                type:'HEAD',
-                timeout: 3000,
-                success: function()
-                {
-                    HistoryChunks = true;
-                }
-        });
 
         $("#loader").removeClass("hidden");
 
@@ -381,31 +395,28 @@ function initialize() {
         filterBlockedMLAT(false);
         toggleAltitudeChart(false);
 
+
         // Get receiver metadata, reconfigure using it, then continue
         // with initialization
-        $.ajax({ url: 'data/receiver.json',
-                 timeout: 5000,
-                 cache: false,
-                 dataType: 'json' })
 
-                .done(function(data) {
-                        if (typeof data.lat !== "undefined") {
-                                SiteShow = true;
-                                SiteLat = data.lat;
-                                SiteLon = data.lon;
-                                DefaultCenterLat = data.lat;
-                                DefaultCenterLon = data.lon;
-                        }
-                        
-                        Dump1090Version = data.version;
-                        RefreshInterval = data.refresh;
-                        PositionHistorySize = data.history;
-                })
+		
+        $.when(get_receiver(), test_chunk()).done(function(receiver, chunk){
+                var data = receiver[0];
+                if (typeof data.lat !== "undefined") {
+                        SiteShow = true;
+                        SiteLat = data.lat;
+                        SiteLon = data.lon;
+                        DefaultCenterLat = data.lat;
+                        DefaultCenterLon = data.lon;
+                }
 
-                .always(function() {
-                        initialize_map();
-                        start_load_history();
-                });
+                Dump1090Version = data.version;
+                RefreshInterval = data.refresh;
+                PositionHistorySize = data.history;
+
+                initialize_map();
+                start_load_history();
+        });
 }
 
 var CurrentHistoryFetch = null;
