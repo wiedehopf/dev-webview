@@ -273,16 +273,16 @@ PlaneObject.prototype.updateTrack = function(receiver_timestamp, last_timestamp)
     var track_change = (this.tail_track && this.track) ? Math.abs(this.tail_track - this.track) : -1;
 
     if ( since_update > 32 ||
-        (track_change > 1 && since_update > 2) ||
-        (track_change > 0.25 && since_update > 4) ||
+        (track_change > 1 && since_update > 3) ||
+        (track_change > 0.25 && since_update > 8) ||
         (this.position_from_mlat && since_update > 8) ||
-        (track_change == -1 && since_update > 4) )
+        (track_change == -1 && since_update > 5) )
     {
         // enough time has elapsed; retain the last point and add a new one
         //if (this.selected) console.log(track_change.toPrecision(2) + "  " + since_update.toPrecision(3) + "  " +this.history_size);
         // Starting a curve let's append the previous point unless part of the track.
         // Checking one part of the coordinate should suffice here.
-        if (track_change > 1 && since_update > 2 && lastseg.fixed.getLastCoordinate()[0] != projPrev[0]) {
+        if (track_change > 1 && since_update > 3 && lastseg.fixed.getLastCoordinate()[0] != projPrev[0]) {
             lastseg.fixed.appendCoordinate(projPrev);
             this.history_size ++;
         }
