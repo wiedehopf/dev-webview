@@ -141,10 +141,10 @@ function processReceiverUpdate(data) {
 }
 
 function fetchData() {
-    //if (FetchPending !== null && FetchPending.state() == 'pending') {
-    // don't double up on fetches, let the last one resolve
-    //return;
-    //}
+    if (FetchPending !== null && FetchPending.state() == 'pending') {
+        // don't double up on fetches, let the last one resolve
+        return;
+    }
 
     FetchPending = $.ajax({ url: 'data/aircraft.json',
         timeout: 5000,
@@ -153,6 +153,8 @@ function fetchData() {
     FetchPending.done(function(data) {
         var now = data.now;
 
+        // experimental stuff
+        /*
         var browserNow = (new Date()).getTime();
         var diff = browserNow -  now*1000;
         var delay = RefreshInterval;
@@ -165,6 +167,7 @@ function fetchData() {
         if ((now-LastReceiverTimestamp)*1000 >  1.5* RefreshInterval || (now-LastReceiverTimestamp)*1000 < 0.5 * RefreshInterval)
             console.log("We missed a beat: aircraft.json");
         //console.log(((now-LastReceiverTimestamp)*1000).toFixed(0) + " " + diff +" "+ delay + "                  "+now);
+        */
 
         processReceiverUpdate(data);
 
@@ -489,9 +492,13 @@ function load_history_chunk(i) {
             var strings = data.split("dirty_hack\n");
             // will hopefully bring the sexy back!
             for (var str in strings) {
-                var json = JSON.parse(strings[str]);
-                //if (!json.aircraft) console.log(str);
-                PositionHistoryBuffer.push(json);
+                var json = null;
+                try {
+                    json = JSON.parse(strings[str]);
+                    PositionHistoryBuffer.push(json);
+                } catch {
+                    console.log(strings[str]);
+                }
             }
             //console.timeEnd("array_conv");
 
@@ -562,7 +569,7 @@ function end_load_history() {
     reaper();
 
     // Setup our timer to poll from the server.
-    //window.setInterval(fetchData, RefreshInterval);
+    window.setInterval(fetchData, RefreshInterval);
     window.setInterval(reaper, 60000);
 
     // And kick off one refresh immediately.
