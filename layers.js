@@ -13,12 +13,12 @@ function createBaseLayers() {
                 source: new ol.source.OSM({
 
 			"url" : "https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png"
-//			"url" : "http://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+//			"url" : "https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 //			"url" : "http://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
 //			"url" : "http://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
 //			"url" : "https://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}"
 //			"url" : "https://korona.geog.uni-heidelberg.de/tiles/asterh/x={x}&y={y}&z={z}"
-//			"url" : "http://{a-c}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png"
+//			"url" : "https://{a-c}.tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png"
 //			"url" : "http://{a-c}.tilessputnik.ru/tiles/kmt2/{z}/{x}/{y}.png"
 //			"url" : "https://{a-c}.tile.openstreetmap.se/hydda/full/{z}/{x}/{y}.png"
 //			"url" : "https://{a-c}.tile.openstreetmap.se/osm/{z}/{x}/{y}.png"

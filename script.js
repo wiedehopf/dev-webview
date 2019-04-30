@@ -545,7 +545,18 @@ function end_load_history() {
                 plane.updateTrack(now, last);
             }
 
+
+			if(h%50 == 49) {
+				for (var i = 0; i < PlanesOrdered.length; ++i) {
+					var plane = PlanesOrdered[i];
+					plane.updateTick(now, last);
+				}
+				refreshTableInfo();
+				reaper();
+			}
+
             last = now;
+			LastReceiverTimestamp = last;
         }
 
         // Final pass to update all planes to their latest state
