@@ -141,71 +141,71 @@ function processReceiverUpdate(data) {
 }
 
 function fetchData() {
-    if (FetchPending !== null && FetchPending.state() == 'pending') {
-        // don't double up on fetches, let the last one resolve
-        return;
-    }
+	if (FetchPending !== null && FetchPending.state() == 'pending') {
+		// don't double up on fetches, let the last one resolve
+		return;
+	}
 
-    FetchPending = $.ajax({ url: 'data/aircraft.json',
-        timeout: 5000,
-        cache: false,
-        dataType: 'json' });
-    FetchPending.done(function(data) {
-        var now = data.now;
+	FetchPending = $.ajax({ url: 'data/aircraft.json',
+		timeout: 5000,
+		cache: false,
+		dataType: 'json' });
+	FetchPending.done(function(data) {
+		var now = data.now;
 
-        // experimental stuff
-        /*
-        var browserNow = (new Date()).getTime();
-        var diff = browserNow -  now*1000;
-        var delay = RefreshInterval;
+		// experimental stuff
+		/*
+		var browserNow = (new Date()).getTime();
+		var diff = browserNow -  now*1000;
+		var delay = RefreshInterval;
 
-        if (diff > -100)
-            delay = Math.max(RefreshInterval*1.3 - diff,100);
+		if (diff > -100)
+			delay = Math.max(RefreshInterval*1.3 - diff,100);
 
-        window.setTimeout(fetchData, delay);
+		window.setTimeout(fetchData, delay);
 
-        if ((now-LastReceiverTimestamp)*1000 >  1.5* RefreshInterval || (now-LastReceiverTimestamp)*1000 < 0.5 * RefreshInterval)
-            console.log("We missed a beat: aircraft.json");
-        //console.log(((now-LastReceiverTimestamp)*1000).toFixed(0) + " " + diff +" "+ delay + "                  "+now);
-        */
+		if ((now-LastReceiverTimestamp)*1000 >  1.5* RefreshInterval || (now-LastReceiverTimestamp)*1000 < 0.5 * RefreshInterval)
+			console.log("We missed a beat: aircraft.json");
+		//console.log(((now-LastReceiverTimestamp)*1000).toFixed(0) + " " + diff +" "+ delay + "                  "+now);
+		*/
 
-        processReceiverUpdate(data);
+		processReceiverUpdate(data);
 
-        // update timestamps, visibility, history track for all planes - not only those updated
-        for (var i = 0; i < PlanesOrdered.length; ++i) {
-            var plane = PlanesOrdered[i];
-            plane.updateTick(now, LastReceiverTimestamp);
-        }
+		// update timestamps, visibility, history track for all planes - not only those updated
+		for (var i = 0; i < PlanesOrdered.length; ++i) {
+			var plane = PlanesOrdered[i];
+			plane.updateTick(now, LastReceiverTimestamp);
+		}
 
-        selectNewPlanes();
-        refreshTableInfo();
-        refreshSelected();
-        refreshHighlighted();
+		selectNewPlanes();
+		refreshTableInfo();
+		refreshSelected();
+		refreshHighlighted();
 
-        if (ReceiverClock) {
-            var rcv = new Date(now * 1000);
-            ReceiverClock.render(rcv.getUTCHours(),rcv.getUTCMinutes(),rcv.getUTCSeconds());
-        }
+		if (ReceiverClock) {
+			var rcv = new Date(now * 1000);
+			ReceiverClock.render(rcv.getUTCHours(),rcv.getUTCMinutes(),rcv.getUTCSeconds());
+		}
 
-        // Check for stale receiver data
-        if (LastReceiverTimestamp === now) {
-            StaleReceiverCount++;
-            if (StaleReceiverCount > 5) {
-                $("#update_error_detail").text("The data from dump1090 hasn't been updated in a while. Maybe dump1090 is no longer running?");
-                $("#update_error").css('display','block');
-            }
-        } else { 
-            StaleReceiverCount = 0;
-            LastReceiverTimestamp = now;
-            $("#update_error").css('display','none');
-        }
-    });
+		// Check for stale receiver data
+		if (LastReceiverTimestamp === now) {
+			StaleReceiverCount++;
+			if (StaleReceiverCount > 5) {
+				$("#update_error_detail").text("The data from dump1090 hasn't been updated in a while. Maybe dump1090 is no longer running?");
+				$("#update_error").css('display','block');
+			}
+		} else { 
+			StaleReceiverCount = 0;
+			LastReceiverTimestamp = now;
+			$("#update_error").css('display','none');
+		}
+	});
 
-    FetchPending.fail(function(jqxhr, status, error) {
-        $("#update_error_detail").text("AJAX call failed (" + status + (error ? (": " + error) : "") + "). Maybe dump1090 is no longer running?");
-        $("#update_error").css('display','block');
-        fetchData();
-    });
+	FetchPending.fail(function(jqxhr, status, error) {
+		$("#update_error_detail").text("AJAX call failed (" + status + (error ? (": " + error) : "") + "). Maybe dump1090 is no longer running?");
+		$("#update_error").css('display','block');
+		fetchData();
+	});
 }
 
 function get_receiver() {
