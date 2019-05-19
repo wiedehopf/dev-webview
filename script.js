@@ -213,36 +213,13 @@ function get_receiver() {
         timeout: 5000,
         cache: false,
         dataType: 'json'
-    })
-
-        .done(function(data) {
-            if (typeof data.lat !== "undefined") {
-                SiteShow = true;
-                SiteLat = data.lat;
-                SiteLon = data.lon;
-                DefaultCenterLat = data.lat;
-                DefaultCenterLon = data.lon;
-            }
-
-            Dump1090Version = data.version;
-            RefreshInterval = data.refresh;
-            PositionHistorySize = data.history;
-        });
+    });
 }
 function test_chunk() {
     return $.ajax({
         url:'data/chunk_0.gz',
         type:'HEAD',
         timeout: 3000,
-        success: function()
-        {
-            HistoryChunks = true;
-        },
-        statuscode: {
-            304: function() {
-                HistoryChunks = true;
-            }
-        }
     });
 }
 var PositionHistorySize = 0;
@@ -417,9 +394,31 @@ function initialize() {
     // with initialization
 
 
-    $.when(get_receiver(), test_chunk()).always(function(receiver, chunk){
-        initialize_map();
-        start_load_history();
+    $.when(get_receiver()
+	).done(function(data){
+		if (typeof data.lat !== "undefined") {
+			SiteShow = true;
+			SiteLat = data.lat;
+			SiteLon = data.lon;
+			DefaultCenterLat = data.lat;
+			DefaultCenterLon = data.lon;
+		}
+
+		Dump1090Version = data.version;
+		RefreshInterval = data.refresh;
+		PositionHistorySize = data.history;
+
+		$.when(test_chunk()
+		).done(function() {
+			HistoryChunks = true;
+			initialize_map();
+			start_load_history();
+		}).fail(function() {
+			HistoryChunks = false;
+			initialize_map();
+			start_load_history();
+		});
+
     });
 }
 
