@@ -18,7 +18,6 @@ var infoBoxOriginalPosition = {};
 var customAltitudeColors = true;
 var loadtime = "loadtime";
 var HistoryChunks = false;
-var chunksize = 20;
 var refresh;
 
 var SpecialSquawks = {
@@ -217,9 +216,10 @@ function get_receiver() {
 }
 function test_chunk() {
     return $.ajax({
-        url:'data/chunk_0.gz',
-        type:'HEAD',
+        url:'chunks/chunks.json',
         timeout: 3000,
+		cache: false,
+        dataType: 'json'
     });
 }
 var PositionHistorySize = 0;
@@ -409,8 +409,9 @@ function initialize() {
 		PositionHistorySize = data.history;
 
 		$.when(test_chunk()
-		).done(function() {
+		).done(function(data) {
 			HistoryChunks = true;
+			PositionHistorySize = data.chunks;
 			initialize_map();
 			start_load_history();
 		}).fail(function() {
@@ -428,7 +429,6 @@ var HistoryItemsReturned = 0;
 function start_load_history() {
     if (PositionHistorySize > 0 && window.location.hash != '#nohistory') {
         if (HistoryChunks) {
-            PositionHistorySize = Math.ceil(PositionHistorySize/chunksize);
             $("#loader_progress").attr('max',PositionHistorySize);
             console.log("Starting to load history (" + PositionHistorySize + " items)");
             console.time("Downloaded and parsed History");
@@ -475,45 +475,37 @@ function load_history_item(i) {
 }
 
 function load_history_chunk(i) {
-    //console.log("Loading history #" + i);
-    //$("#loader_progress").attr('value',i);
+	//console.log("Loading history #" + i);
+	//$("#loader_progress").attr('value',i);
 
-    $.ajax({ url: 'data/chunk_' + i + '.gz',
-        timeout: PositionHistorySize * 1000, // Allow 40 ms load time per history entry
-        //cache: false,
-    })
+	$.ajax({ url: 'chunks/chunk_' + i + '.gz',
+		timeout: PositionHistorySize * 1000, // Allow 40 ms load time per history entry
+		//cache: false,
+		dataType: 'json'
+	})
 
-        .done(function(data) {
-            HistoryItemsReturned++;
-            $("#loader_progress").attr('value',HistoryItemsReturned);
+		.done(function(data) {
+			$("#loader_progress").attr('value',HistoryItemsReturned);
 
-            //console.time("array_conv");
-            var strings = data.split("dirty_hack\n");
-            // will hopefully bring the sexy back!
-            for (var str in strings) {
-                var json = null;
-                try {
-                    json = JSON.parse(strings[str]);
-                    PositionHistoryBuffer.push(json);
-                } catch {
-                    console.log(strings[str]);
-                }
-            }
-            //console.timeEnd("array_conv");
+			for (var i in data.files) {
+				PositionHistoryBuffer.push(data.files[i]);
+			}
 
-            if (HistoryItemsReturned == PositionHistorySize) {
-                end_load_history();
-            }
-        })
+			HistoryItemsReturned++;
+			if (HistoryItemsReturned == PositionHistorySize) {
+				end_load_history();
+			}
+		})
 
-        .fail(function(jqxhr, status, error) {
-            //Doesn't matter if it failed, we'll just be missing a data point
-            console.log(error);
-            HistoryItemsReturned++;
-            if (HistoryItemsReturned == PositionHistorySize) {
-                end_load_history();
-            }
-        });
+		.fail(function(jqxhr, status, error) {
+			//Doesn't matter if it failed, we'll just be missing a data point
+			$("#loader_progress").attr('value',HistoryItemsReturned);
+			//console.log(error);
+			HistoryItemsReturned++;
+			if (HistoryItemsReturned == PositionHistorySize) {
+				end_load_history();
+			}
+		});
 }
 
 function end_load_history() {
